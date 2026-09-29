@@ -34,8 +34,8 @@ someone else, and you're the one walking it, tap by tap.
 Assistants can tell you the weather. They can't get you a cab.
 
 Vecto is built on a simple bet: **the next interface for your phone is the phone doing the work
-itself.** Not a new device. Not a new operating system. An agent that drives the apps you already have,
-on the phone already in your pocket.
+itself.** Not a new device. Not a new operating system, yet. An agent that drives the apps you already
+have, on the phone already in your pocket.
 
 We're starting with the two things people do on repeat: **getting a ride** and **ordering food**.
 Nail those, then go everywhere.
@@ -182,6 +182,18 @@ Android AccessibilityService · TypeScript · Cloudflare Workers · Claude · Zo
 - **A brain on the phone.** Simple commands handled by an on-device model: instant, offline, free.
 - **Everything else you do on repeat.** Groceries, table bookings, bills. We'll follow whatever users
   ask for most.
+
+## The long game
+
+Today Vecto is an app. That's deliberate: it's the fastest way to learn what people actually want their
+devices to do for them, on hardware they already own.
+
+The destination is bigger: **a complete system for interacting with your devices.** One agent that
+knows you, lives across your phone, watch, and whatever comes next, and turns *"what I want"* into
+*"done"* without a single screen in between. Every flow we ship, every playbook, and every memory
+Vecto keeps is a step toward that layer.
+
+App first. System next.
 
 ## Where it's at
 
