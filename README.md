@@ -1,136 +1,190 @@
+<div align="center">
+
 # Vecto
 
-**Tell your phone what you want. It does the tapping.**
+### You say it. Your phone does it.
 
-Vecto is an AI agent that operates the apps already on your Android phone. Say *"cab home"* or
-*"the usual from Dishoom"* from a home-screen widget or your watch, and Vecto opens Uber or Uber Eats,
-navigates the app for you, and stops at the final screen so you confirm with one tap.
+*An AI agent that uses your apps for you, from a home-screen widget or your wrist.*
 
-No new phone, no custom OS, no app-by-app integrations: it works on the phone you already own, today.
+</div>
 
-```
-"order the usual from Dishoom"   (widget, command bar, or watch)
-        │
-        ▼
-Vecto understands it  →  remembers your usual  →  opens Uber Eats  →  searches, adds items  →  you tap Pay
-```
+---
 
-## Why
+It's 11pm. You're starving. You know exactly what you want: the same black daal and garlic naan you
+always get from Dishoom.
 
-Every task on a phone is a sequence of taps across screens someone else designed. Assistants can answer
-questions, but they still can't *do* things in the apps people actually use. Vecto closes that gap with
-an agent that drives real app UIs, starting with the two flows people repeat most: getting a ride and
-ordering food.
+So you unlock your phone. Find Uber Eats. Wait for it to load. Dismiss the promo. Tap search. Type
+"dish". Tap Dishoom. Scroll past the specials. Find the daal. Add. Back. Find the naan. Add. Basket.
+Checkout.
 
-## What works today
+**A dozen or so taps to say something you could say in five words.**
 
-| | |
+With Vecto, you lift your wrist and say *"the usual from Dishoom."*
+Your phone opens Uber Eats, finds the restaurant, fills the basket, and waits for you to tap Pay.
+
+That's it. That's the product.
+
+---
+
+## The idea
+
+Phones got smart, but using them didn't get easier. Every task is still a maze of screens designed by
+someone else, and you're the one walking it, tap by tap.
+
+Assistants can tell you the weather. They can't get you a cab.
+
+Vecto is built on a simple bet: **the next interface for your phone is the phone doing the work
+itself.** Not a new device. Not a new operating system. An agent that drives the apps you already have,
+on the phone already in your pocket.
+
+We're starting with the two things people do on repeat: **getting a ride** and **ordering food**.
+Nail those, then go everywhere.
+
+## What it feels like
+
+| You say | Vecto does |
 |---|---|
-| **Home-screen widget** | One tap opens a command bar; shortcut chips like "Cab home". |
-| **Voice from the watch** | A Wear OS app that listens instantly and hands the command to the phone. |
-| **Rides** | Opens Uber with the drop-off filled in. You pick the ride and confirm. |
-| **Food** | Opens Uber Eats and runs a scripted agent: search, open restaurant, add items, stop at basket. |
-| **On-device memory** | Learns frequent places and usual orders; "remember I'm vegetarian" stores a fact. Viewable and deletable in the app. |
-| **Live status + Stop** | A floating pill shows each step the agent takes, with a Stop button. |
-| **Safety by design** | The agent never pays. It stops before any money moves. |
+| *"Cab home"* | Opens Uber with your home address already set. You pick the ride and go. |
+| *"Cab to King's Cross"* | Same thing, anywhere in London. |
+| *"Order from Dishoom"* | Opens Uber Eats, searches, and drops you on the menu. |
+| *"The usual from Dishoom"* | Remembers what you ordered last time and fills the basket. |
+| *"Remember I'm vegetarian"* | Writes it down (on your phone, not our servers). |
+
+Ask from the **home-screen widget**, the **command bar**, or your **Wear OS watch**. Same brain,
+same memory, whichever you grab first.
+
+While it works, a little floating pill shows every step (*"3/5 · Opening Dishoom"*) with a big
+**Stop** button. You're always in control.
 
 ## How it works
 
+Vecto is four pieces working together:
+
+**The ears (watch).** A tiny Wear OS app. Raise your wrist, speak, done. The watch turns your voice into
+text and hands it to your phone over Bluetooth. No watch login, no watch internet.
+
+**The brain (backend).** Your words plus a short summary of what Vecto remembers go to a small stateless
+server. Claude turns them into a precise, structured action like
+`{order_food, "Dishoom", ["Black Daal", "Garlic Naan"]}`. That's one model call per command, not one per tap.
+
+**The hands (agent).** On the phone, Vecto takes the fastest route available. If an app supports deep
+links, it jumps straight to the right screen. If not, an Android accessibility service drives the real
+app UI with a scripted **playbook**: find this, tap that, type here. It's fast, predictable, and costs
+nothing per tap.
+
+**The memory (on-device).** Every command and how it went is saved on your phone. Vecto learns your
+usual places and usual orders, so it gets better the more you use it. You can see all of it, and delete
+it, in the app.
+
 ```mermaid
 flowchart LR
-    subgraph Watch["Wear OS watch"]
-        W[Voice → text]
-    end
-    subgraph Phone["Android phone"]
-        WG[Widget / command bar]
-        CR[CommandRunner]
-        M[(On-device memory)]
-        AR[ActionRouter]
-        AG[Accessibility agent<br/>+ playbooks]
-        UB[Uber / Uber Eats]
-    end
-    subgraph Cloud["Backend (Cloudflare Worker)"]
-        API["/v1/intent"]
-        LLM[Claude<br/>structured output]
+    You(("You")) -- "the usual from Dishoom" --> Watch["⌚ Watch<br/>voice → text"]
+    You -- tap --> Widget["📱 Widget"]
+    Watch -- Bluetooth --> Phone
+    Widget --> Phone
+
+    subgraph Phone["Your phone"]
+        Runner["Vecto"] <--> Memory[("Memory<br/>stays here")]
+        Runner --> Hands["Agent + playbooks"]
     end
 
-    W -- Data Layer message --> CR
-    WG --> CR
-    CR -- text + memory summary --> API --> LLM
-    LLM -- "{action, destination, restaurant, items}" --> CR
-    M <--> CR
-    CR --> AR
-    AR -- deep link --> UB
-    AR --> AG -- taps & types --> UB
+    Runner -- "words + memory summary" --> Brain["☁️ Claude<br/>→ structured action"]
+    Brain -- "{order_food, Dishoom, [daal, naan]}" --> Runner
+    Hands -- taps & types --> Apps["Uber · Uber Eats"]
 ```
 
-1. **Understand.** The command and a compact summary of on-device memory go to a stateless backend,
-   which uses Claude with a strict output schema to return a structured action.
-2. **Act.** Deep links get as close as possible (Uber opens with the destination set). For steps a link
-   can't do, an Android accessibility service runs a scripted **playbook** against the live UI:
-   deterministic, fast, and free, with no model call per tap.
-3. **Remember.** Outcomes are written back to memory on the phone, so "the usual" and frequent
-   destinations get better with use.
+Want the deep dive? See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-More detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+## Things Vecto will never do
 
-## Privacy
+- **Pay for you without asking.** Every flow stops at the final screen. The last tap is yours.
+- **Act on its own.** It only moves when you give it a command.
+- **Snoop.** Its accessibility access is scoped to the apps it supports, and it only reads the
+  screen while running a command you started.
+- **Upload your life.** Memory lives on your phone. The server gets a short summary per command and keeps nothing.
+- **Make you sign up.** No account, no password, no API key.
 
-- **Memory never leaves the phone.** The backend receives a short summary with each command and stores nothing.
-- **No accounts.** An anonymous device ID is used only for rate limiting.
-- **Scoped access.** The accessibility service is restricted to Uber and Uber Eats; Vecto can't see other apps.
-- **Always in control.** Every step is visible, Stop works at any point, and payment is always yours.
+## Questions people ask
 
-## Repository layout
+**Isn't this just a voice assistant?**
+Voice assistants answer questions. Vecto operates apps: it opens them, navigates them and fills them in,
+the way you would, just faster.
 
-```
-android/
-  app/        Phone app: widget, command bar, agent, playbooks, memory, watch bridge
-  wear/       Wear OS app: voice capture → phone
-backend/      Cloudflare Worker: /v1/intent → Claude structured output (+ free mock parser for dev)
-docs/         Architecture notes
-```
+**Why not wait for Apple or Google to build this into the OS?**
+They're working on it, and it'll arrive first on the newest flagship phones. Vecto runs on the Android
+phone you already have, today, including the affordable ones most people actually own.
 
-**Stack:** Kotlin, Jetpack Compose, Glance (widget), Wear Compose, Wear OS Data Layer,
-AccessibilityService · TypeScript, Cloudflare Workers, Anthropic SDK, Zod.
+**Why an accessibility service?**
+It's the official Android way for software to see and operate on-screen controls, the same mechanism
+screen readers use. Vecto uses it narrowly and visibly, only in the apps it supports.
 
-## Running it
+**Why only Uber and Uber Eats?**
+Because two flows that work every single time beat twenty that work sometimes. Reliability first,
+breadth second.
 
-**Backend**
+**What happens when Uber redesigns their app?**
+A playbook step fails, the agent stops and hands control back to you, and it logs the new screen layout
+so the playbook can be fixed quickly. Model-driven recovery for unexpected screens is on the roadmap.
+
+## Try it yourself
+
+You'll need Android Studio and Node.js. No API key required to get started.
+
 ```sh
-cd backend
-npm install
-npm run dev                 # http://localhost:8787
+# 1. Start the brain (runs locally; uses a free built-in parser if there's no API key)
+cd backend && npm install && npm run dev
+
+# 2. Build the phone + watch apps
+cd android && ./gradlew assembleDebug
 ```
-Without an API key the backend uses a built-in keyword parser (`cab to …`, `order from …`,
-`the usual from …`, `remember …`), so the whole app can be tried for free. To use Claude, put
-`ANTHROPIC_API_KEY=…` in `backend/.dev.vars`.
 
-**Apps**
-1. Open `android/` in Android Studio and sync.
-2. Run the `app` configuration on a phone or emulator. Debug builds call `http://10.0.2.2:8787`
-   (the host machine, from the emulator); set `BACKEND_URL` for a deployed backend.
-3. In Vecto: add the widget, enable **Vecto actions** under Accessibility, and save a home address.
-4. Optional: run the `wear` configuration on a paired Wear OS watch. Debug builds of both apps share a
-   signing key, which the Data Layer requires.
+Then open `android/` in Android Studio, run the **app** configuration, add the widget, switch on
+**Vecto actions** in Accessibility settings, and say something. For the watch, run the **wear**
+configuration on a paired Wear OS watch.
 
-**Deploy the backend**
+To use Claude instead of the built-in parser, put `ANTHROPIC_API_KEY=…` in `backend/.dev.vars`.
+
+<details>
+<summary><b>Deploying the backend</b></summary>
+
 ```sh
 cd backend
 npx wrangler secret put ANTHROPIC_API_KEY
 npx wrangler kv namespace create RATE_LIMIT   # add the id to wrangler.toml
 npm run deploy
 ```
+Then point `BACKEND_URL` in `android/app/build.gradle.kts` at the deployed URL.
 
-## Roadmap
+</details>
 
-- **Confirm-and-place:** read the total from screen, confirm in Vecto (or on the watch), agent taps Pay.
-- **Reliability:** per-step recovery with a model fallback when a playbook meets an unexpected screen.
-- **On-device intelligence:** handle simple commands with an on-device model over the same memory:
-  offline, instant, free.
-- **More flows:** groceries, restaurant bookings, bill payments, chosen by what users repeat most.
+<details>
+<summary><b>What's in the box</b></summary>
 
-## Status
+```
+android/
+  app/        Phone: widget, command bar, agent, playbooks, memory, watch bridge
+  wear/       Watch: voice in, status out
+backend/      Cloudflare Worker: words → Claude → structured action
+docs/         Architecture deep dive
+```
 
-Early prototype under active development. Phone and watch apps build; flows are being tuned on real
-devices in London.
+**Built with:** Kotlin · Jetpack Compose · Glance · Wear Compose · Wear OS Data Layer ·
+Android AccessibilityService · TypeScript · Cloudflare Workers · Claude · Zod
+
+</details>
+
+## What's next
+
+- **One-tap checkout.** Vecto reads the total off the screen and asks *"£18.40 from Dishoom, to home?"*
+  You tap yes on your phone or watch, and it places the order.
+- **Self-healing flows.** When an app surprises the playbook, the agent asks the model what to do next
+  instead of giving up.
+- **A brain on the phone.** Simple commands handled by an on-device model: instant, offline, free.
+- **Everything else you do on repeat.** Groceries, table bookings, bills. We'll follow whatever users
+  ask for most.
+
+## Where it's at
+
+Early, scrappy, and real. The phone and watch apps build, and the flows are next up for tuning on real
+phones in London. If you want to try it, break it, or tell us which task you'd automate first,
+[open an issue](../../issues).
