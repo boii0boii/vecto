@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Vecto</string>
+    <string name="widget_description">Tell your phone what to do</string>
+    <string name="accessibility_service_label">Vecto actions</string>
+    <string name="accessibility_service_description">Lets Vecto tap and type inside Uber and Uber Eats for you, only when you give it a command. Vecto never pays for you: it always stops before checkout so you confirm.</string>
+</resources>

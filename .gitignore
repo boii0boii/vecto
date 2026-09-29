@@ -1,0 +1,23 @@
+# Android
+android/.gradle/
+android/.kotlin/
+android/build/
+android/*/build/
+android/local.properties
+android/.idea/
+*.iml
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# Backend
+backend/node_modules/
+backend/.wrangler/
+backend/.dev.vars
+
+# Private notes and local tool settings
+CLAUDE.local.md
+.claude/
+
+.DS_Store

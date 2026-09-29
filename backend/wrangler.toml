@@ -1,0 +1,20 @@
+name = "vecto-backend"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Which Claude model parses commands. See README "Costs" before changing.
+MODEL = "claude-opus-5"
+# Free commands per device per day.
+DAILY_LIMIT = "30"
+
+# Per-device rate limiting. Create the namespace once with:
+#   npx wrangler kv namespace create RATE_LIMIT
+# then uncomment and paste the id. Without it, rate limiting is skipped (fine for local dev).
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "PASTE_ID_HERE"
+
+# Secret (never commit it):  npx wrangler secret put ANTHROPIC_API_KEY
+# For local dev, put ANTHROPIC_API_KEY=... in backend/.dev.vars
